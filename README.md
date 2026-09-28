@@ -37,4 +37,4 @@ Formato do manifesto:
 - Enviar os dois arquivos à mesma versão do GitHub Release, para que `latest/download` sirva um par correspondente.
 - Nunca enviar keystores, senhas, credenciais, arquivos-fonte ou builds de depuração a este repositório.
 
-Nenhum APK será publicado até validarmos a assinatura em relação ao Cupu instalado no Xiaomi.
+O caminho de assinatura e atualização por cima foi validado em um Xiaomi com Android 16. Este canal ainda não tem um release publicado; APK e manifesto só serão anexados quando uma versão acumulada estiver pronta para distribuição.
