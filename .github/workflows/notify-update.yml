@@ -1,0 +1,38 @@
+name: Notify Cupu devices about a release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: ${{ !github.event.release.prerelease }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Firebase
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          project_id: cupu-d9e0f
+          token_format: access_token
+
+      - name: Notify subscribed devices
+        env:
+          MANIFEST_URL: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.event.release.tag_name }}/manifest.json
+          ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+        run: |
+          curl --fail --silent --show-error --location "$MANIFEST_URL" -o "$RUNNER_TEMP/manifest.json"
+          jq -e '.version and .version_code and .file_url and .sha256' "$RUNNER_TEMP/manifest.json" >/dev/null
+          jq '{message:{topic:"cupu_updates",android:{priority:"HIGH",ttl:"604800s"},data:{kind:"app_update",version:(.version|tostring),versionCode:(.version_code|tostring),fileUrl:.file_url,sha256:.sha256,changelog:(.changelog // "")}}}' \
+            "$RUNNER_TEMP/manifest.json" \
+            > "$RUNNER_TEMP/fcm-message.json"
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H 'Content-Type: application/json; charset=UTF-8' \
+            --data-binary @"$RUNNER_TEMP/fcm-message.json" \
+            "https://fcm.googleapis.com/v1/projects/cupu-d9e0f/messages:send"
